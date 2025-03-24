@@ -30,9 +30,6 @@ HEADERS = {
 
 # Gemini API settings
 GEMINI_API_KEY = "AIzaSyDWN-lXdhrNSD4arKrFA6d581eKKz0iK8c"
-genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel("gemini-2.0-flash")
-
 
 # CSS configuration
 st.markdown(
@@ -110,7 +107,7 @@ If the user asks about any other diseases, politely inform them that you special
 
 # Initialize LLM
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-pro", google_api_key=GEMINI_API_KEY, temperature=0.7
+    model="gemini-2.0-flash", google_api_key=GEMINI_API_KEY, temperature=0.7
 )
 memory = ConversationBufferMemory(memory_key="history", return_messages=True)
 chatbot = ConversationChain(llm=llm, memory=memory)
@@ -185,19 +182,22 @@ with tabs[0]:
         image = image_source.convert("RGB")
         st.image(image, use_container_width=True)
         image = image.resize((128, 128))
-        #image_array = np.array(image) / 255.0
-        #image_array = np.expand_dims(image_array, axis=0)
+        image_array = np.array(image) / 255.0
+        image_array = np.expand_dims(image_array, axis=0)
         
-    def get_disease_prediction(image):
-        """Send image to Custom Vision API."""    
-        response = requests.post(CUSTOM_VISION_ENDPOINT, headers=HEADERS, data=image)
-        if response.status_code != 200:
-            st.error(f"Custom Vision Error: {response.text}")
-            return None
+    
+    response = requests.post(CUSTOM_VISION_ENDPOINT, headers=HEADERS, data=uploaded_file)
+
+    if response.status_code != 200:
+        st.error(f"Custom Vision Error: {response.text}")
+        top_prediction = None
+    else:
         predictions = response.json().get("predictions", [])
+    
         if not predictions:
-            return None
-        return max(predictions, key=lambda x: x['probability'])
+            top_prediction = None
+        else:
+            top_prediction = max(predictions, key=lambda x: x['probability'])
         
 
 # AI Assistant tab
