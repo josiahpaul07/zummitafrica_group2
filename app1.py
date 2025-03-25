@@ -166,38 +166,54 @@ st.markdown(
 tabs = st.tabs(["Image Classification", "AI Assistant", "History", "Settings"])
 
 # Image Classification tab
-with tabs[0]:
-    option = st.selectbox("Choose input method", ["Upload Image", "Take a Picture"])
-    image_source = None
-    if option == "Upload Image":
-        uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-        if uploaded_file is not None:
-            image_source = Image.open(uploaded_file)
-    elif option == "Take a Picture":
-        captured_image = st.camera_input("Take a picture")
-        if captured_image is not None:
-            image_source = Image.open(captured_image)
 
-    if image_source is not None:
-        image = image_source.convert("RGB")
-        st.image(image, use_container_width=True)
-        image = image.resize((128, 128))
-        image_array = np.array(image) / 255.0
-        image_array = np.expand_dims(image_array, axis=0)
+# --- Streamlit UI ---
+tabs = st.tabs(["Disease Detection", "Other Features"])  # Example for multiple tabs
+
+with tabs[0]:  # First tab
+    st.header("🌾 Crop Disease Detection")
+
+    def get_disease_prediction(image_bytes):
+        """Send image to Custom Vision API and get predictions."""
+        response = requests.post(CUSTOM_VISION_ENDPOINT, headers=HEADERS, data=image_bytes)
         
-    
-    response = requests.post(CUSTOM_VISION_ENDPOINT, headers=HEADERS, data=uploaded_file)
-
-    if response.status_code != 200:
-        st.error(f"Custom Vision Error: {response.text}")
-        top_prediction = None
-    else:
+        if response.status_code != 200:
+            st.error(f"Custom Vision Error: {response.text}")
+            return None
+        
         predictions = response.json().get("predictions", [])
-    
         if not predictions:
-            top_prediction = None
+            return None
+        
+        return max(predictions, key=lambda x: x['probability'])
+
+    def get_cure_recommendation(disease_name):
+        """Placeholder function for getting cure recommendations."""
+        return f"For {disease_name}, apply organic treatments like neem oil or appropriate fungicides."
+
+    uploaded_file = st.file_uploader("Upload a crop image", type=["jpg", "jpeg", "png"])
+
+    if uploaded_file:
+        st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+        image_bytes = uploaded_file.read()
+
+        with st.spinner('🔍 Detecting disease...'):
+            top_prediction = get_disease_prediction(image_bytes)
+
+        if top_prediction:
+            disease_name = top_prediction.get("tagName", "Unknown Disease")
+            probability = round(top_prediction.get("probability", 0) * 100, 2)
+
+            st.success(f"🌿 **Detected Disease:** {disease_name} ({probability}%)")
+
+            with st.spinner('💡 Generating cure recommendation...'):
+                cure_recommendation = get_cure_recommendation(disease_name)
+
+            st.subheader("🩺 Recommended Cure")
+            st.write(cure_recommendation)
         else:
-            top_prediction = max(predictions, key=lambda x: x['probability'])
+            st.error("No predictions found or an error occurred.")
+
         
 
 # AI Assistant tab
