@@ -99,10 +99,9 @@ System_Prompt = """
 You are an expert agricultural assistant. You must only answer questions related to these crop diseases:
 Corn: Common Rust, Gray Leaf Spot, Northern Leaf Blight, Healthy
 Potato: Early Blight, Late Blight, Healthy
-Rice: Brown Spot, Leaf Blast, Neck Blast, Healthy
-Wheat: Brown Rust, Yellow Rust, Healthy
-Sugarcane: Red Rot, Bacterial Blight, Healthy
-If the user asks about any other diseases, politely inform them that you specialize only in the diseases listed above.
+Tomato: Bacterial spot, Early blight, Late blight, Leaf Mold, Septoria leaf spot, Spider mites, Target Spot, mosaic virus, Yellow Leaf Curl Virus, Healthy
+If the user asks about any other diseases, politely inform them that you specialize only in the diseases listed above. 
+Also is the crop is healthy return: state in an affirming tone that the crop is in good health
 """
 
 # Initialize LLM
@@ -166,10 +165,6 @@ st.markdown(
 tabs = st.tabs(["Image Classification", "AI Assistant", "History", "Settings"])
 
 # Image Classification tab
-
-# --- Streamlit UI ---
-tabs = st.tabs(["Disease Detection", "Other Features"])  # Example for multiple tabs
-
 with tabs[0]:  # First tab
     st.header("🌾 Crop Disease Detection")
 
@@ -187,10 +182,6 @@ with tabs[0]:  # First tab
         
         return max(predictions, key=lambda x: x['probability'])
 
-    def get_cure_recommendation(disease_name):
-        """Placeholder function for getting cure recommendations."""
-        return f"For {disease_name}, apply organic treatments like neem oil or appropriate fungicides."
-
     uploaded_file = st.file_uploader("Upload a crop image", type=["jpg", "jpeg", "png"])
 
     if uploaded_file:
@@ -205,16 +196,8 @@ with tabs[0]:  # First tab
             probability = round(top_prediction.get("probability", 0) * 100, 2)
 
             st.success(f"🌿 **Detected Disease:** {disease_name} ({probability}%)")
-
-            with st.spinner('💡 Generating cure recommendation...'):
-                cure_recommendation = get_cure_recommendation(disease_name)
-
-            st.subheader("🩺 Recommended Cure")
-            st.write(cure_recommendation)
         else:
             st.error("No predictions found or an error occurred.")
-
-        
 
 # AI Assistant tab
 with tabs[1]:
